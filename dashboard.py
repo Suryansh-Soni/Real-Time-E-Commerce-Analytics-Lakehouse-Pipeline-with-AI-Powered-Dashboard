@@ -4,19 +4,19 @@ import os
 import plotly.express as px
 import plotly.graph_objects as go
 
-# 👉 ML IMPORT
+# ML import
 from ml_model import predict_future
 
 # ==============================
-# 🎨 PAGE CONFIG
+# PAGE CONFIG
 # ==============================
 st.set_page_config(
-    page_title="AI-Powered E-Commerce Analytics",
+    page_title="E-Commerce Analytics Dashboard",
     layout="wide"
 )
 
 # ==============================
-# 🎨 PREMIUM CSS (UNCHANGED)
+# PREMIUM CSS (UNCHANGED STYLE)
 # ==============================
 st.markdown("""
 <style>
@@ -56,9 +56,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================
-# 📁 DATA PATH
+# DATA PATH (FIX FOR DEPLOYMENT)
 # ==============================
-BASE_PATH = "C:/delta/gold_csv/"
+BASE_PATH = "data"   # Use local repo folder for deployment
 
 def load_csv(folder):
     path = os.path.join(BASE_PATH, folder)
@@ -69,16 +69,16 @@ def load_csv(folder):
     if not files:
         return pd.DataFrame()
 
-    return pd.read_csv(os.path.join(path, files[0]), engine="python")
+    return pd.read_csv(os.path.join(path, files[0]))
 
 # ==============================
-# 🔄 REFRESH BUTTON
+# REFRESH BUTTON
 # ==============================
-if st.button("🔄 Refresh Dashboard"):
+if st.button("Refresh Dashboard"):
     st.rerun()
 
 # ==============================
-# 📥 LOAD DATA
+# LOAD DATA
 # ==============================
 kpi = load_csv("kpi")
 product_sales = load_csv("product_sales")
@@ -86,32 +86,27 @@ revenue_trend = load_csv("revenue_trend")
 orders_per_minute = load_csv("orders_per_minute")
 
 # ==============================
-# 🔍 SIDEBAR FILTERS
+# SIDEBAR FILTERS
 # ==============================
-st.sidebar.title("🎯 Smart Filters")
+st.sidebar.title("Filters")
 
 selected_products = []
 if not product_sales.empty:
     selected_products = st.sidebar.multiselect(
-        "📦 Select Products",
+        "Select Products",
         options=list(product_sales["product"].unique()),
         default=list(product_sales["product"].unique())
     )
 
-top_n = st.sidebar.slider(
-    "🏆 Show Top N Products",
-    min_value=3,
-    max_value=20,
-    value=5
-)
+top_n = st.sidebar.slider("Top N Products", 3, 20, 5)
 
 sort_option = st.sidebar.selectbox(
-    "📊 Sort By",
+    "Sort By",
     ["Revenue", "Orders"]
 )
 
 # ==============================
-# 🎯 APPLY FILTERS
+# APPLY FILTERS
 # ==============================
 filtered_data = product_sales.copy()
 
@@ -135,13 +130,13 @@ if not filtered_data.empty:
 st.sidebar.metric("Filtered Products", len(filtered_data))
 
 # ==============================
-# 🏷️ TITLE
+# TITLE
 # ==============================
-st.title("🚀 AI-Powered E-Commerce Analytics Dashboard")
-st.caption("Real-time Insights | Product Intelligence | Sales Trends")
+st.title("E-Commerce Analytics Dashboard")
+st.caption("Real-time insights, product performance tracking, and sales trend analysis")
 
 # ==============================
-# 🔥 KPI CARDS
+# KPI SECTION
 # ==============================
 if not kpi.empty:
     col1, col2, col3 = st.columns(3)
@@ -162,15 +157,15 @@ if not kpi.empty:
 
     col3.markdown(f"""
     <div class="card">
-        <h4>Avg Order Value</h4>
+        <h4>Average Order Value</h4>
         <h2>₹ {round(kpi['avg_order_value'][0],2)}</h2>
     </div>
     """, unsafe_allow_html=True)
 
 # ==============================
-# 🏆 PRODUCT ANALYTICS
+# PRODUCT PERFORMANCE
 # ==============================
-st.markdown("## 🏆 Product Performance")
+st.markdown("## Product Performance")
 
 col1, col2 = st.columns(2)
 
@@ -200,9 +195,9 @@ with col2:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ==============================
-# 📈 TREND ANALYSIS
+# SALES TRENDS
 # ==============================
-st.markdown("## 📈 Sales Trends")
+st.markdown("## Sales Trends")
 
 if not revenue_trend.empty:
     revenue_trend["moving_avg"] = revenue_trend["revenue"].rolling(3).mean()
@@ -215,7 +210,7 @@ with col1:
         fig = px.line(
             revenue_trend,
             y=["revenue", "moving_avg"],
-            title="Revenue Trend (with Moving Avg)"
+            title="Revenue Trend"
         )
         st.plotly_chart(fig, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
@@ -226,29 +221,24 @@ with col2:
         fig = px.line(
             orders_per_minute,
             y="order_count",
-            title="Orders Per Minute"
+            title="Orders Over Time"
         )
         st.plotly_chart(fig, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ==============================
-# 🔮 SALES PREDICTION (NEW)
+# SALES PREDICTION
 # ==============================
-st.markdown("## 🔮 Sales Prediction (AI)")
+st.markdown("## Sales Forecasting")
 
 if not revenue_trend.empty:
 
-    col1, col2 = st.columns([1,2])
+    col1, col2 = st.columns([1, 2])
 
     with col1:
-        future_steps = st.slider(
-            "Select Future Steps",
-            min_value=5,
-            max_value=50,
-            value=10
-        )
+        future_steps = st.slider("Forecast Steps", 5, 50, 10)
 
-        if st.button("Train & Predict"):
+        if st.button("Generate Forecast"):
             future_df = predict_future(revenue_trend, future_steps)
             st.session_state["future"] = future_df
 
@@ -268,32 +258,32 @@ if not revenue_trend.empty:
                 x=list(range(len(revenue_trend), len(revenue_trend) + len(future_df))),
                 y=future_df["predicted_revenue"],
                 mode='lines',
-                name='Predicted Revenue',
+                name='Forecasted Revenue',
                 line=dict(dash='dash')
             ))
 
-            fig.update_layout(title="Future Revenue Prediction")
+            fig.update_layout(title="Revenue Forecast")
 
             st.plotly_chart(fig, use_container_width=True)
 
 # ==============================
-# 🧠 AI INSIGHTS
+# INSIGHTS
 # ==============================
-st.markdown("## 🧠 Smart Insights")
+st.markdown("## Insights")
 
 if not filtered_data.empty:
     best = filtered_data.iloc[0]
     worst = filtered_data.iloc[-1]
 
-    st.success(f"🏆 Best Product: {best['product']} (₹ {round(best['total_sales'],2)})")
-    st.error(f"⚠️ Lowest Product: {worst['product']} (₹ {round(worst['total_sales'],2)})")
+    st.success(f"Best Performing Product: {best['product']} (₹ {round(best['total_sales'],2)})")
+    st.warning(f"Lowest Performing Product: {worst['product']} (₹ {round(worst['total_sales'],2)})")
 
 if not revenue_trend.empty:
     growth = revenue_trend["revenue"].pct_change().mean() * 100
-    st.info(f"📊 Avg Revenue Growth: {round(growth,2)}%")
+    st.info(f"Average Revenue Growth: {round(growth,2)}%")
 
 # ==============================
-# 📋 RAW DATA
+# RAW DATA
 # ==============================
-with st.expander("📄 View Filtered Data"):
+with st.expander("View Filtered Data"):
     st.dataframe(filtered_data)
